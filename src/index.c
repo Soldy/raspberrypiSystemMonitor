@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
+#include <time.h>
 
 
 float cpuUsage, lastCpuUsage;
@@ -20,7 +21,22 @@ void clearScreen(){
     printf("\033[H");
 }
 
-float tempDetect(){
+void tableMake(){
+    clearScreen();
+    printf("\033[2;2H ┌────────────────────────────────┐");
+    printf("\033[3;2H │  CPU Tempeture :               │");
+    printf("\033[4;2H │      CPU Usage :               │");
+    printf("\033[5;2H │      CPU Clock :               │");
+    printf("\033[6;2H │         Memory :               │");
+    printf("\033[7;2H │          Count :               │");
+    printf("\033[8;2H └────────────────────────────────┘");
+    printf("\033[3;30HC");
+    printf("\033[4;30H%%");
+    printf("\033[5;30HMhz");
+
+}
+
+int tempDetect(){
     FILE *fpf = fopen("/sys/class/thermal/thermal_zone0/temp", "r");
     int tempNow;
     if((fpf == NULL)){
@@ -28,11 +44,13 @@ float tempDetect(){
     }else{
         fscanf(fpf,"%d", &tempNow);
         fclose(fpf);
-        return  ((float) tempNow / (float) 1000);
+        printf("\033[3;22H %.2f", ((float) tempNow / (float) 1000));
+        return tempNow;
     }
 }
 
-float freqDetect(){
+
+int freqDetect(){
     FILE *fpf = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "r");
     int freqNow;
     if((fpf == NULL)){
@@ -40,12 +58,14 @@ float freqDetect(){
     }else{
         fscanf(fpf,"%d", &freqNow);
         fclose(fpf);
-        return  ((float) freqNow / (float) 1000);
+        printf("\033[5;22H %.d", ((int) freqNow / (int) 1000));
+        return   freqNow ;
     }
+    return 0;
 
 }
 
-float cpuUsageDetect(){
+int cpuUsageDetect(){
     FILE *fpf = fopen("/proc/stat","r");
     fgets(str,100,fpf);
     fclose(fpf);
@@ -65,16 +85,24 @@ float cpuUsageDetect(){
     lastIdle = idle;
     lastSum = sum;
     lastCpuUsage = cpuUsage;
-    return cpuUsage;
+    printf("\033[4;22H %.2f", cpuUsage);
+    return ((int)(cpuUsage*100));
 }
 
 int main(){
+    int round = 0;
+    tableMake();
     while(0 == 0){
-        clearScreen();
-        printf("%.2f\n", tempDetect());
-        printf("%.2f\n", freqDetect());
-        printf("%.2f\n", cpuUsageDetect());
+        if(round == 30){
+           tableMake();
+           round = 0;
+        }else{
+           round++;
+        }
+        tempDetect();
+        freqDetect();
+        cpuUsageDetect();
         fflush(stdout); 
-        usleep(500000); 
+        usleep(1000000); 
     }
 }
