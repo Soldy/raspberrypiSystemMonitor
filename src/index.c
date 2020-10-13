@@ -137,6 +137,7 @@ int memUsageDetect(){
 
 int main(){
     int round = 0;
+    int alround = 0;
     char buffer[50] = "";
     char *sql = "INSERT INTO performance " \
         "(timestamp, cputemp, cpuusage, memusage, cpuclock, round)" \
@@ -160,12 +161,13 @@ int main(){
             cpuUsageDetect(),
             memUsageDetect(),
             freqDetect(),
-            round
+            alround
         );  // faster than the prepare statemanet and that just numbers
-        printf("\033[7;22H %d ", round);
+        printf("\033[7;22H %d ", alround);
         fflush(stdout); 
         rc = sqlite3_exec(db, buffer, sqlcallback, 0, &zErrMsg);
         sqlite3_close(db);
+        alround++;
         usleep(1000000); 
     }
 }
