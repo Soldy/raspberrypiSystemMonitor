@@ -1,3 +1,8 @@
+/*
+ *  Extreme light system monitor daemon
+ *
+ */
+
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h>
