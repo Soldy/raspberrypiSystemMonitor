@@ -42,7 +42,8 @@ void sqlconnect(){
         "cputemp INTEGER NOT NULL, " \
         "cpuusage INTEGER NOT NULL, " \
         "memusage INTEGER NOT NULL, " \
-        "cpuclock INTEGER NOT NULL" \
+        "cpuclock INTEGER NOT NULL, " \
+        "round INTEGER NOT NULL" \
     ");";
     rc = sqlite3_open("test.db", &db);
     rc = sqlite3_exec(db, sql, sqlcallback, 0, &zErrMsg);
@@ -138,9 +139,9 @@ int main(){
     int round = 0;
     char buffer[50] = "";
     char *sql = "INSERT INTO performance " \
-        "(timestamp, cputemp, cpuusage, memusage, cpuclock)" \
+        "(timestamp, cputemp, cpuusage, memusage, cpuclock, round)" \
         " VALUES " \
-        "(%d, %d, %d, %d, %d);";
+        "(%d, %d, %d, %d, %d, %d);";
     sqlconnect();
     tableMake();
     while(0 == 0){
@@ -158,8 +159,10 @@ int main(){
             tempDetect(), 
             cpuUsageDetect(),
             memUsageDetect(),
-            freqDetect()
+            freqDetect(),
+            round
         );  // faster than the prepare statemanet and that just numbers
+        printf("\033[7;22H %d ", round);
         fflush(stdout); 
         rc = sqlite3_exec(db, buffer, sqlcallback, 0, &zErrMsg);
         sqlite3_close(db);
