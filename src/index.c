@@ -5,7 +5,7 @@
 #include <math.h>
 #include <time.h>
 #include <sqlite3.h>    // SQLite header (from /usr/include)
-
+#include <sys/sysinfo.h>
 
 
 sqlite3 *db;        // database connection
@@ -22,6 +22,7 @@ char* token;
 int i = 0,times,lag;
 long int sum = 0, idle, lastSum = 0,lastIdle = 0;
 long double idleFraction;
+struct sysinfo sys_info;
 
 static int sqlcallback(void *NotUsed, int argc, char **argv, char **azColName) {
     int i;
@@ -34,7 +35,8 @@ void sqlconnect(){
         "id INTEGER PRIMARY KEY AUTOINCREMENT, " \
         "timestamp INTEGER UNIQUE, " \
         "cputemp INTEGER NOT NULL, " \
-         "cpuusage INTEGER NOT NULL, " \
+        "cpuusage INTEGER NOT NULL, " \
+        "memusage INTEGER NOT NULL, " \
         "cpuclock INTEGER NOT NULL" \
     ");";
     rc = sqlite3_open("test.db", &db);
@@ -62,6 +64,7 @@ void tableMake(){
     printf("\033[8;2H └────────────────────────────────┘");
     printf("\033[3;30HC");
     printf("\033[4;30H%%");
+    printf("\033[6;30H%%");
     printf("\033[5;30HMhz");
 
 }
@@ -88,7 +91,7 @@ int freqDetect(){
     }else{
         fscanf(fpf,"%d", &freqNow);
         fclose(fpf);
-        printf("\033[5;22H %.d", ((int) freqNow / (int) 1000));
+        printf("\033[5;22H %.d ", ((int) freqNow / (int) 1000));
         return   freqNow ;
     }
     return 0;
@@ -115,17 +118,24 @@ int cpuUsageDetect(){
     lastIdle = idle;
     lastSum = sum;
     lastCpuUsage = cpuUsage;
-    printf("\033[4;22H %.2f", cpuUsage);
+    printf("\033[4;22H %.2f ", cpuUsage);
     return ((int)(cpuUsage*100));
+}
+
+int memUsageDetect(){
+    sysinfo(&sys_info);
+    memUsage = (100.00-(100.00*((float)sys_info.freeram/(float)sys_info.totalram)));
+    printf("\033[6;22H %.2f ", memUsage);
+    return (int)(memUsage*100);
 }
 
 int main(){
     int round = 0;
     char buffer[50] = "";
     char *sql = "INSERT INTO performance " \
-        "(timestamp, cputemp, cpuusage, cpuclock)" \
+        "(timestamp, cputemp, cpuusage, memusage, cpuclock)" \
         " VALUES " \
-        "(%d, %d, %d, %d);";
+        "(%d, %d, %d, %d, %d);";
     sqlconnect();
     tableMake();
     while(0 == 0){
@@ -142,6 +152,7 @@ int main(){
             (int)time(NULL),
             tempDetect(), 
             cpuUsageDetect(),
+            memUsageDetect(),
             freqDetect()
         );  // faster than the prepare statemanet and that just numbers
         fflush(stdout); 
